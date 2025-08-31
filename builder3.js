@@ -91,21 +91,21 @@ async function createDiamond({content, x, y, w=130, h=90}){
   });
 }
 
-// v2: правильные поля коннектора
+// v2: правильные поля для коннектора
 async function createConn(startItemId, endItemId, { dotted=false, color="#64748B" } = {}){
   const r = await api(`/boards/${BOARD_ID}/connectors`, {
     method:"POST",
     body: JSON.stringify({
       shape: "elbowed", // straight | elbowed | curved
       style: {
-        strokeColor: color,          // hex #RRGGBB
+        strokeColor: color,                 // #RRGGBB
         strokeWidth: 2,
         strokeStyle: dotted ? "dotted" : "normal", // normal | dashed | dotted
-        startStrokeCap: "none",      // none | arrow | stealth | triangle | ...
+        startStrokeCap: "none",             // none | arrow | stealth | triangle | ...
         endStrokeCap: "stealth"
       },
-      start: { item: startItemId, snapTo: "right" },
-      end:   { item: endItemId,   snapTo: "left"  }
+      startItem: { id: startItemId },
+      endItem:   { id: endItemId }
     })
   });
   if(!r.ok) throw new Error("createConn: " + JSON.stringify(r.data));
