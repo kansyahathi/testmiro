@@ -1,19 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Miro Reset Demo</title>
+  <meta charset="UTF-8" />
+  <title>WE 3-Step Demo Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    button { padding: 10px 20px; font-size: 16px; }
-    pre { background: #f5f5f5; padding: 10px; margin-top: 20px; }
+    body{font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#0b1220;color:#e5e7eb}
+    .wrap{max-width:880px;margin:0 auto;padding:18px}
+    h1{font-size:20px;margin:0 0 8px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 12px}
+    button{padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#111827;color:#e5e7eb;cursor:pointer}
+    button:hover{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.15)}
+    .hint{font-size:12px;color:#9ca3af}
+    pre{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;white-space:pre-wrap;max-height:360px;overflow:auto}
   </style>
 </head>
 <body>
-  <h1>Miro Reset Demo</h1>
-  <button id="resetBtn">Reset Board</button>
-  <pre id="log">Logs will appear here...</pre>
+  <div class="wrap">
+    <h1>WE 3-Step Demo Builder</h1>
+    <div class="hint">По кнопке создаст 3 фрейма (лево: Elsa, право: WE) со «слайдовой псевдо-анимацией».</div>
+    <div class="row">
+      <button id="btn-build">Build 3 steps</button>
+      <button id="btn-wipe">Wipe board</button>
+    </div>
+    <pre id="log">Готово. Нажми «Build 3 steps»…</pre>
+  </div>
 
-  <script src="reset.js"></script>
+  <script src="builder3.js"></script>
 </body>
 </html>
