@@ -1,1 +1,26 @@
-<html></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Miro App Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="font:14px system-ui; padding:16px; background:#fafafa; color:#111">
+  <h2>It works 🎉</h2>
+  <p>Это панель твоего Miro App. Ниже кнопка для теста SDK:</p>
+
+  <button id="ping">Ping board</button>
+  <pre id="out" style="background:#eee; padding:8px; border-radius:6px; white-space:pre-wrap;"></pre>
+
+  <!-- Подключение Miro Web SDK -->
+  <script src="https://miro.com/app/static/sdk/v2/miro.js"></script>
+  <script>
+    miro.onReady(() => {
+      document.getElementById('ping').onclick = async () => {
+        const info = await miro.board.getInfo();
+        document.getElementById('out').textContent = JSON.stringify(info, null, 2);
+      };
+    });
+  </script>
+</body>
+</html>
