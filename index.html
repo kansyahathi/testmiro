@@ -15,11 +15,9 @@
   <!-- Подключение Miro Web SDK -->
   <script src="https://miro.com/app/static/sdk/v2/miro.js"></script>
   <script>
-    miro.onReady(() => {
-      document.getElementById('ping').onclick = async () => {
-        const info = await miro.board.getInfo();
-        document.getElementById('out').textContent = JSON.stringify(info, null, 2);
-      };
+    miro.onReady(async () => {
+      // Откроем панель справа автоматически
+        await miro.board.ui.openPanel({ url: 'index.html' });
     });
   </script>
 </body>
