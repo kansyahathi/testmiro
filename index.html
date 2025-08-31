@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>WE 3-Step Demo Builder (REST v2)</title>
+  <title>WE Flow — Single Frame Demo (REST v2)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --bg:#0b1220; --panel:#0f172a; --stroke:#334155; --text:#e5e7eb; --muted:#9ca3af; }
     html,body{margin:0;height:100%;}
     body{font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text);}
-    .wrap{max-width:880px;margin:0 auto;padding:18px}
+    .wrap{max-width:860px;margin:0 auto;padding:18px}
     h1{font-size:20px;margin:0 0 6px}
     .hint{font-size:12px;color:var(--muted);margin-bottom:10px}
     .row{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 12px}
@@ -20,19 +20,21 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>WE 3-Step Demo Builder</h1>
-    <div class="hint">
-      По кнопке создаст 3 фрейма (Elsa / WE) с «слайдовой псевдо-анимацией». <br/>
-      Работает через Miro REST API v2.
-    </div>
+    <h1>WE Flow — Single Frame Demo</h1>
+    <div class="hint">Один кадр, 5 блоков, точка-маркер и псевдо-кнопка. Управление кнопками ниже.</div>
+
     <div class="row">
-      <button id="btn-build">Build 3 steps</button>
+      <button id="btn-build">Build scene</button>
+      <button id="btn-step">Step</button>
+      <button id="btn-auto">Auto</button>
+      <button id="btn-reset">Reset</button>
       <button id="btn-wipe">Wipe board</button>
     </div>
-    <pre id="log">Готово. Нажми «Build 3 steps»…</pre>
-    <div class="small">После проверки ротируй токен в Miro Developer Console.</div>
+
+    <pre id="log">Готово. Нажми «Build scene»…</pre>
+    <div class="small">Пока клики внутри Miro не запускают код (нет панели SDK). Кнопка «Step» здесь двигает точку на борде через REST.</div>
   </div>
 
-  <script src="builder3.js"></script>
+  <script src="single-flow.js"></script>
 </body>
 </html>
