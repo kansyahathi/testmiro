@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru" data-page="step2">
+<head>
+  <meta charset="UTF-8" />
+  <title>WE HTML Demo — Step 2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-mode="step2">
+  <div class="container">
+    <div class="hdr">
+      <h1>Step 2 — Wait</h1>
+      <nav class="nav">
+        <a href="index.html">Step 1</a>
+        <a class="active" href="step2.html">Step 2</a>
+        <a href="step3.html">Step 3</a>
+      </nav>
+    </div>
+
+    <div class="controls">
+      <button id="btn-step">Animate dot</button>
+      <button id="btn-reset">Reset</button>
+    </div>
+    <div class="help">Оба флоу «в ожидании». WE — проверка версии на входе в ожидание, действие «выстреливает» из контекста ожидания.</div>
+
+    <div class="stage"></div>
+
+    <div class="legend">
+      <span class="badge"><span class="dot dot2"></span> Elsa pointer</span>
+      <span class="badge"><span class="dot"></span> WE pointer</span>
+    </div>
+
+    <div class="footer">HTML/SVG демо без Miro. Анимация — JS, верстка — CSS.</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
