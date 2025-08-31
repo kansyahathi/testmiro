@@ -1,11 +1,14 @@
-// ====== Настройки (для демо захардкожено; потом вынесем) ======
+// ====== ДЕМО-НАСТРОЙКИ (потом вынеси на сервер!) ======
 const TOKEN    = "eyJtaXJvLm9yaWdpbiI6ImV1MDEifQ_iatvz2iENVrYn9VZFr2sGm_6Waw";
 const BOARD_ID = "uXjVJObprOI=";
 
+// ====== UI ======
 const logEl = () => document.getElementById("log");
 function log(msg){ logEl().textContent += "\n" + msg; }
-function resetLog(txt=""){ document.getElementById("log").textContent = txt; }
+function resetLog(txt=""){ logEl().textContent = txt; }
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
+// ====== REST helper ======
 async function api(path, opts={}){
   const url = `https://api.miro.com/v2${path}`;
   const res = await fetch(url, {
@@ -13,14 +16,11 @@ async function api(path, opts={}){
     ...opts
   });
   const text = await res.text();
-  let data;
-  try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+  let data; try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
   return { ok: res.ok, status: res.status, data };
 }
 
-function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
-
-// ====== Удаление всего с борда (исправленная пагинация) ======
+// ====== Очистка борда (с пагинацией, лимит 50) ======
 async function wipeBoard(){
   resetLog("Wipe: start…");
   let cursor = null, total = 0;
@@ -36,16 +36,13 @@ async function wipeBoard(){
     const items = r.data.data || [];
     if (items.length === 0) break;
 
-    // Удаляем пачкой по одному (можно распараллелить, но аккуратнее последовательно)
     for (const it of items) {
       const del = await api(`/boards/${BOARD_ID}/items/${it.id}`, { method: "DELETE" });
-      // Перехват возможного rate limit
       if (del.status === 429) { await sleep(400); }
       log(`deleted ${it.type || 'item'} ${it.id} [${del.status}]`);
       total++;
     }
 
-    // Переходим к следующей странице
     cursor = r.data.cursor || null;
     if (!cursor) break;
   }
@@ -53,8 +50,7 @@ async function wipeBoard(){
   log(`Wipe: done. Deleted ${total} items.`);
 }
 
-
-// ====== Хелперы создания ======
+// ====== Создание элементов ======
 async function createFrame(title, x, y){
   const r = await api(`/boards/${BOARD_ID}/frames`, {
     method:"POST",
@@ -84,30 +80,40 @@ async function createShape({content, shape="round_rectangle", x, y, w=160, h=60,
 }
 
 async function createDiamond({content, x, y, w=130, h=90}){
-  return createShape({ content, shape:"rhombus", x, y, w, h, fill:"#0D1326", border:"#3B82F6", bw:2, fontSize:14 });
+  return createShape({
+    content,
+    shape:"rhombus",
+    x, y, w, h,
+    fill:"#0D1326",
+    border:"#3B82F6",
+    bw:2,
+    fontSize:14
+  });
 }
 
-async function createConn(aId, bId, dotted=false, color="#64748B"){
+// v2: правильные поля коннектора
+async function createConn(startItemId, endItemId, { dotted=false, color="#64748B" } = {}){
   const r = await api(`/boards/${BOARD_ID}/connectors`, {
     method:"POST",
     body: JSON.stringify({
-      startItem: { id: aId },
-      endItem:   { id: bId },
+      shape: "elbowed", // straight | elbowed | curved
       style: {
-        color,
-        lineEndStyle: "filled_arrow",
-        lineThickness: 2,
-        lineStyle: dotted ? "dotted" : "normal"
-      }
+        strokeColor: color,          // hex #RRGGBB
+        strokeWidth: 2,
+        strokeStyle: dotted ? "dotted" : "normal", // normal | dashed | dotted
+        startStrokeCap: "none",      // none | arrow | stealth | triangle | ...
+        endStrokeCap: "stealth"
+      },
+      start: { item: startItemId, snapTo: "right" },
+      end:   { item: endItemId,   snapTo: "left"  }
     })
   });
   if(!r.ok) throw new Error("createConn: " + JSON.stringify(r.data));
   return r.data;
 }
 
-// ====== Рисуем «схему потока» в одном кадре ======
+// ====== Рисуем один «мини-флоу» в кадре ======
 async function drawMiniFlow(frameCenterX, frameCenterY, { showCalc=false, step=1, side="left" }){
-  // координаты для двух мини-схем (лево/право) внутри кадра
   const cx = side==="left" ? frameCenterX - 260 : frameCenterX + 260;
   const cy = frameCenterY - 80;
   const dx = 180;
@@ -123,57 +129,66 @@ async function drawMiniFlow(frameCenterX, frameCenterY, { showCalc=false, step=1
   await createConn(wait.id,  a2.id);
   await createConn(a2.id,    finish.id);
 
-  // пунктир «расчёта» для правой стороны
   if(side==="right" && showCalc){
-    await createConn(start.id, a1.id, true, "#60A5FA");
-    await createConn(a1.id,    wait.id, true, "#60A5FA");
+    await createConn(start.id, a1.id,  { dotted:true, color:"#60A5FA" });
+    await createConn(a1.id,    wait.id,{ dotted:true, color:"#60A5FA" });
   }
 
-  // «точка» — где сейчас «находимся» на этом шаге
+  // «текущая позиция» — точка
   let dotTarget = start;
   if(step===2) dotTarget = side==="left" ? a1 : wait;
   if(step===3) dotTarget = side==="left" ? wait : a2;
 
-  await createShape({ content:"", shape:"circle", x: dotTarget.position.x, y: dotTarget.position.y, w:18, h:18, fill: side==="left" ? "#22C55E" : "#3B82F6", border: side==="left" ? "#22C55E" : "#3B82F6", bw:2 });
+  await createShape({
+    content:"",
+    shape:"circle",
+    x: dotTarget.position.x,
+    y: dotTarget.position.y,
+    w:18, h:18,
+    fill: side==="left" ? "#22C55E" : "#3B82F6",
+    border: side==="left" ? "#22C55E" : "#3B82F6",
+    bw:2
+  });
 
   // лог-плашка
   const logY = frameCenterY + 160;
   const logText = (side==="left")
     ? (step===1 ? "Elsa: шаг 1 — Start (v1)\nИнстанс движется блок за блоком." :
-       step===2 ? "Elsa: шаг 2 — Action 1\nДальше → Wait (ожидание)." :
-                  "Elsa: шаг 3 — Wait → Action 2\nИзменение версии не влияет на текущий инстанс.")
+       step===2 ? "Elsa: шаг 2 — Action 1 → далее Wait." :
+                  "Elsa: шаг 3 — Wait → Action 2.\nИзменение версии не влияет на текущий инстанс.")
     : (step===1 ? "WE: шаг 1 — Start → расчёт маршрута до ближайшего Wait." :
        step===2 ? "WE: шаг 2 — в Wait (версия проверена на входе).\nДействие выполняется «выстрелом»." :
                   "WE: шаг 3 — Action 2 → далее.\nЕсли версия обновлена в ожидании — применится новая.");
 
-  await createShape({ content: "Log:\n" + logText, shape:"rectangle",
-    x: cx, y: logY, w: 440, h: 140, fill:"#0F172A", border:"#334155", bw:1, fontSize:12 });
+  await createShape({
+    content: "Log:\n" + logText,
+    shape:"rectangle",
+    x: cx, y: logY, w: 440, h: 140,
+    fill:"#0F172A", border:"#334155", bw:1, fontSize:12
+  });
 }
 
-// ====== Собрать 3 шага (кадра) ======
+// ====== Собрать 3 шага ======
 async function build3(){
   resetLog("Build: start…");
 
-  // сначала подчистим (мягко)
   await wipeBoard();
 
-  // Центры кадров: три фрейма слева-направо
   const y = 0;
   const frames = [
     { title:"Step 1 — Start & Calc", x:-1400, step:1, showCalc:true },
-    { title:"Step 2 — Wait",         x:   0, step:2, showCalc:false },
+    { title:"Step 2 — Wait",         x:   0,  step:2, showCalc:false },
     { title:"Step 3 — Action 2",     x: 1400, step:3, showCalc:false },
   ];
 
   for(const f of frames){
     const fr = await createFrame(f.title, f.x, y);
-    // в каждом кадре рисуем левую и правую мини-схему
     await drawMiniFlow(fr.position.x, fr.position.y, { step:f.step, showCalc:f.showCalc, side:"left"  });
     await drawMiniFlow(fr.position.x, fr.position.y, { step:f.step, showCalc:f.showCalc, side:"right" });
     log(`created frame: ${fr.data?.title || f.title}`);
   }
 
-  log("Build: done. Открой Presentation и листай → получится «анимация» по шагам.");
+  log("Build: done. Открой Presentation и листай — получится «анимация» шагов.");
 }
 
 // ====== Кнопки ======
