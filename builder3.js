@@ -18,23 +18,41 @@ async function api(path, opts={}){
   return { ok: res.ok, status: res.status, data };
 }
 
-// ====== Удаление всего с борда (с пагинацией) ======
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+// ====== Удаление всего с борда (исправленная пагинация) ======
 async function wipeBoard(){
   resetLog("Wipe: start…");
-  let cursor = null, total=0;
-  do{
-    const q = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "?limit=100";
-    const r = await api(`/boards/${BOARD_ID}/items${q}`);
-    if(!r.ok) throw new Error(`List items failed ${r.status}: ${JSON.stringify(r.data)}`);
+  let cursor = null, total = 0;
+
+  while (true) {
+    const params = new URLSearchParams();
+    params.set('limit', '50');
+    if (cursor) params.set('cursor', cursor);
+
+    const r = await api(`/boards/${BOARD_ID}/items?${params.toString()}`);
+    if (!r.ok) throw new Error(`List items failed ${r.status}: ${JSON.stringify(r.data)}`);
+
     const items = r.data.data || [];
-    for(const it of items){
-      const del = await api(`/boards/${BOARD_ID}/items/${it.id}`, { method:"DELETE" });
-      total++; log(`deleted ${it.type || 'item'} ${it.id} [${del.status}]`);
+    if (items.length === 0) break;
+
+    // Удаляем пачкой по одному (можно распараллелить, но аккуратнее последовательно)
+    for (const it of items) {
+      const del = await api(`/boards/${BOARD_ID}/items/${it.id}`, { method: "DELETE" });
+      // Перехват возможного rate limit
+      if (del.status === 429) { await sleep(400); }
+      log(`deleted ${it.type || 'item'} ${it.id} [${del.status}]`);
+      total++;
     }
+
+    // Переходим к следующей странице
     cursor = r.data.cursor || null;
-  } while(cursor);
+    if (!cursor) break;
+  }
+
   log(`Wipe: done. Deleted ${total} items.`);
 }
+
 
 // ====== Хелперы создания ======
 async function createFrame(title, x, y){
